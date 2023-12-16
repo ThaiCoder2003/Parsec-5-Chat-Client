@@ -46,11 +46,21 @@ public class client_handler implements Runnable{
 		return out;
 	}
 	
+	public void closeSocket() throws IOException {
+		if (socket!=null) {
+			socket.close();
+		}
+	}
+	
 	public void setSocket(Socket s) throws IOException {
 		socket=s;
 		
 		in=new BufferedReader(new InputStreamReader(socket.getInputStream()));
 		out=new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+	}
+	
+	public void run() {
+		
 	}
 	
 }

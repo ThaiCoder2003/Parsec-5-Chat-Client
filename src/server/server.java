@@ -85,7 +85,7 @@ public class server{
 			lock=new Object();
 			loadAccount();
 			s=new ServerSocket(2023);
-			while(true) {
+			while(!isClosed()) {
 				socket=s.accept();
 				
 				BufferedReader in=new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -107,6 +107,7 @@ public class server{
 							Thread t=new Thread(new_client);
 							t.start();
 							addOnline(username);
+							getOnlineList();
 						}
 						else {
 							out.write("Registration Failed!");
@@ -120,6 +121,7 @@ public class server{
 				}
 				
 				else if(req.equals("Login")){
+					
 					String username=in.readLine();
 					String password=in.readLine();
 					
@@ -135,6 +137,7 @@ public class server{
 									Thread t=new Thread(new_client);
 									t.start();
 									addOnline(username);
+									getOnlineList();
 								} 
 								else {
 									out.write("Incorrect username or password!");
@@ -152,11 +155,26 @@ public class server{
 					}
 				}
 			}
+			
 		}catch (Exception ex){
 			System.err.println(ex);
 		}
 	 }
-	 
+	
+	public boolean isClosed(){
+		if (s.isClosed()) {
+			return true;
+		}
+		
+		return false;
+	}
+	
+	public void closeServer() throws IOException{
+		if (!s.isClosed()) {
+			s.close();
+		}
+	}
+	
 	 public boolean exists(String username) {
 		 for (client_handler client:clients) {
 			 if (username.equals(client.getUsername())){
