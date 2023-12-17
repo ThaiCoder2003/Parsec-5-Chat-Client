@@ -87,7 +87,7 @@ public class server{
 			lock=new Object();
 			loadAccount();
 			s=new ServerSocket(2023);
-			while(!socket.isClosed()) {
+			while(!s.isClosed()) {
 				socket=s.accept();
 				
 				DataInputStream in=new DataInputStream(socket.getInputStream());
@@ -160,6 +160,12 @@ public class server{
 			
 		}catch (Exception ex){
 			System.err.println(ex);
+		}finally {
+			for (client_handler client:clients) {
+				client.close();
+			}
+			
+			clients.clear();
 		}
 	 }
 	
@@ -184,7 +190,7 @@ public class server{
 	            String password) {
 	        Connection conn = null;
 	        try {
-	            Class.forName("com.mysql.jdbc.Driver");
+	            Class.forName("com.mysql.cj.jdbc.Driver");
 	            conn = DriverManager.getConnection(dbURL, userName, password);
 	        } catch (Exception ex) {
 	            ex.printStackTrace();
@@ -233,12 +239,6 @@ class client_handler implements Runnable{
 	
 	public DataOutputStream getOut() {
 		return out;
-	}
-	
-	public void closeSocket() throws IOException {
-		if (socket!=null) {
-			socket.close();
-		}
 	}
 	
 	public void setSocket(Socket s) throws IOException {

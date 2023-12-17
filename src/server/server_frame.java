@@ -3,6 +3,7 @@ package server;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.IOException;
 
 public class server_frame extends JFrame{
 	/**
@@ -16,6 +17,10 @@ public class server_frame extends JFrame{
 	server server;
 	JButton start;
 	JButton end;
+	JPanel footer;
+	JLabel alert; 
+	
+	Thread t;
 	
 	public server_frame() {
 		frame=new JFrame();
@@ -23,7 +28,7 @@ public class server_frame extends JFrame{
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
 		Container pane=frame.getContentPane();
-		pane.setPreferredSize(new Dimension(500, 200));
+		pane.setPreferredSize(new Dimension(500, 190));
 		JPanel head1=new JPanel();
 		head1.setBackground(Color.orange);
 		
@@ -49,22 +54,72 @@ public class server_frame extends JFrame{
 		start=new JButton();
 		start.setPreferredSize(new Dimension(120, 60));
 		start.setText("Start Server");
+		start.setEnabled(true);
 		
 		end=new JButton();
 		end.setPreferredSize(new Dimension(120, 60));
 		end.setText("Stop Server");
+		end.setEnabled(false);
 		
 		con.add(start);
 		con.add(end);
 		
 		button.add(con, BorderLayout.CENTER);
 		
+		footer=new JPanel();
+		alert=new JLabel();
+		
+		footer.add(alert, BorderLayout.CENTER);
+		
 		pane.add(title, BorderLayout.NORTH);
 		pane.add(button, BorderLayout.CENTER);
+		pane.add(footer, BorderLayout.SOUTH);
+		
+		start.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				t=new Thread() {
+					public void run() {
+						try {
+							server=new server();
+						} catch (IOException e) {
+							alert.setForeground(Color.red);
+							alert.setText("Failed to start server!");
+						}
+					}
+				};
+				
+				t.start();
+				start.setEnabled(false);
+				end.setEnabled(true);
+				alert.setForeground(Color.GREEN);
+				alert.setText("Server started successfully!");
+			}
+			
+		});
+		
+		end.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				try {
+					server.closeServer();
+				}catch(IOException el){
+					alert.setForeground(Color.red);
+					alert.setText("Failed to close server!");
+				}
+				
+				t.interrupt();
+				start.setEnabled(true);
+				end.setEnabled(false);
+				alert.setForeground(Color.GREEN);
+				alert.setText("Server closed successfully!");
+			}
+			
+		});
 		
 		frame.pack();
 		frame.setLocationRelativeTo(null);
-		frame.setVisible(true);	
+		frame.setVisible(true);
+		
+		
 	}
 	
 	public static void main(String[] args) {
