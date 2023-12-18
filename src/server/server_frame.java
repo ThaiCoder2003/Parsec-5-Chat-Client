@@ -3,22 +3,17 @@ package server;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.io.IOException;
+import java.io.*;
 
-public class server_frame extends JFrame{
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-
-	JFrame frame;
-	JPanel title;
-	JPanel button;
+public class server_frame{
+	private JFrame frame;
+	private JPanel title;
+	private JPanel button;
 	server server;
-	JButton start;
-	JButton end;
-	JPanel footer;
-	JLabel alert; 
+	private JButton start;
+	private JButton end;
+	private JPanel footer;
+	private JLabel alert; 
 	
 	Thread t;
 	
@@ -28,7 +23,7 @@ public class server_frame extends JFrame{
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
 		Container pane=frame.getContentPane();
-		pane.setPreferredSize(new Dimension(500, 190));
+		pane.setPreferredSize(new Dimension(400, 190));
 		JPanel head1=new JPanel();
 		head1.setBackground(Color.orange);
 		
