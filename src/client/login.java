@@ -233,11 +233,16 @@ public class login{
 			if (action=="Login") {
 				String response=Login(username.getText(), String.copyValueOf(password.getPassword()));
 				
-				if(response=="Logged in Successfully!") {
+				if(response.equals("Logged in Successfully!")) {
 					String getUsername=username.getText();
 					String welcome="Welcome back, "+getUsername+"!";
+					EventQueue.invokeLater(new Runnable() {
+						public void run() {
+							int alert=JOptionPane.showConfirmDialog(new JFrame(), welcome, "Welcome back!", JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE);
+							ChatRoom room=new ChatRoom(getUsername, read, write);
+						}
+					});
 					
-					int alert=JOptionPane.showConfirmDialog(new JFrame(), welcome, "Welcome back!", JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE);
 					
 					frame.dispose();
 				}
@@ -261,7 +266,12 @@ public class login{
 							String getUsername=username.getText();
 							String welcome="Welcome to Parsec 5 Chat, "+getUsername+"!/nHope you have the best time here! :)";
 							
-							int alert=JOptionPane.showConfirmDialog(new JFrame(), welcome, "Welcome, new user!", JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE);
+							EventQueue.invokeLater(new Runnable() {
+								public void run() {
+									int alert=JOptionPane.showConfirmDialog(new JFrame(), welcome, "Welcome new user!", JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE);
+									ChatRoom room=new ChatRoom(getUsername, read, write);
+								}
+							});
 							
 							frame.dispose();	
 						}

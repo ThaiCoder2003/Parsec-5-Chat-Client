@@ -15,6 +15,8 @@ public class server{
     private static String PASSWORD = "ThaiDangQuoc:)2901";
 	private static ServerSocket s;
 	private Socket socket;
+	private static DataInputStream in;
+	private static DataOutputStream out;
 	static ArrayList<client_handler> clients=new ArrayList<>();
 	static ArrayList<String> online=new ArrayList<>();
 	
@@ -39,8 +41,8 @@ public class server{
 	
 	public int saveAccount(String username, String password) {
 		try {
-			String sql="insert into users ('username', 'password')"
-					+ "values(?, ?)";
+			String sql="insert into users(username, password)"
+					+ " values(?, ?)";
 			Connection conn=getConnection(DB_URL, USER_NAME, PASSWORD);
 			PreparedStatement preparedStmt=conn.prepareStatement(sql);
 			preparedStmt.setString(1, username);
@@ -52,6 +54,7 @@ public class server{
 			return row;
 		}
 		catch (SQLException e) {
+			e.printStackTrace();
 			return 0;
 		}
 	}
@@ -90,8 +93,8 @@ public class server{
 			while(!s.isClosed()) {
 				socket=s.accept();
 				
-				DataInputStream in=new DataInputStream(socket.getInputStream());
-				DataOutputStream out=new DataOutputStream(socket.getOutputStream());
+				in=new DataInputStream(socket.getInputStream());
+				out=new DataOutputStream(socket.getOutputStream());
 				
 				String req=in.readUTF();
 				
@@ -101,6 +104,7 @@ public class server{
 					
 					if (exists(username)==false) {
 						int added=saveAccount(username, password);
+						System.out.println(added);
 						if (added!=0) {
 							client_handler new_client=new client_handler(username, password, socket, lock);
 							clients.add(new_client);
@@ -170,6 +174,14 @@ public class server{
 	 }
 	
 	public static void closeServer() throws IOException{
+		if (in!=null) {
+			in.close();
+		}
+		
+		if (out!=null) {
+			out.close();
+		}
+		
 		if (!s.isClosed()) {
 			s.close();
 		}
@@ -190,7 +202,7 @@ public class server{
 	            String password) {
 	        Connection conn = null;
 	        try {
-	            Class.forName("com.mysql.cj.jdbc.Driver");
+	            Class.forName("com.mysql.jdbc.Driver");
 	            conn = DriverManager.getConnection(dbURL, userName, password);
 	        } catch (Exception ex) {
 	            ex.printStackTrace();
@@ -397,7 +409,7 @@ class client_handler implements Runnable{
 	}
 	
 	public void run() {
-		while (true) {
+		while (socket!=null) {
 			try {
 				String request=in.readUTF();
 				
