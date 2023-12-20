@@ -231,10 +231,10 @@ public class login{
 		public void actionPerformed(ActionEvent e) {
 			String action=e.getActionCommand();
 			if (action=="Login") {
-				String response=Login(username.getText(), String.copyValueOf(password.getPassword()));
+				String getUsername=username.getText();
+				String response=Login(getUsername, String.copyValueOf(password.getPassword()));
 				
 				if(response.equals("Logged in Successfully!")) {
-					String getUsername=username.getText();
 					String welcome="Welcome back, "+getUsername+"!";
 					EventQueue.invokeLater(new Runnable() {
 						public void run() {
@@ -242,7 +242,6 @@ public class login{
 							ChatRoom room=new ChatRoom(getUsername, read, write);
 						}
 					});
-					
 					
 					frame.dispose();
 				}

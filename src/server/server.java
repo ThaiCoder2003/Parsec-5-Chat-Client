@@ -4,8 +4,6 @@ import java.io.*;
 import java.util.*;
 import java.net.*;
 import java.sql.*;
-import java.time.*;
-import java.time.format.*;
 
 public class server{
 	Object lock;
@@ -71,10 +69,10 @@ public class server{
 		String list="";
 		for (String user:online) {
 			list+=user;
-			list+=", ";
+			list+=",";
 		}
 		
-		list=list.substring(0, list.length()-2);
+		list=list.substring(0, list.length()-1);
 		
 		for (client_handler client:clients) {
 			if (online.contains(client.getUsername())) {
@@ -164,16 +162,15 @@ public class server{
 			
 		}catch (Exception ex){
 			System.err.println(ex);
-		}finally {
-			for (client_handler client:clients) {
-				client.close();
-			}
-			
-			clients.clear();
 		}
 	 }
 	
 	public static void closeServer() throws IOException{
+		for (client_handler client:clients) {
+			client.close();
+		}
+	
+		clients.clear();
 		if (in!=null) {
 			in.close();
 		}
@@ -260,15 +257,13 @@ class client_handler implements Runnable{
 		out=new DataOutputStream(socket.getOutputStream());
 	}
 	
-	public void broadcastTextMessage(String message) throws IOException {
-		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");  
-		LocalDateTime now = LocalDateTime.now();  
+	public void broadcastTextMessage(String message, String time) throws IOException {
 		for (client_handler client:server.clients) {
 			try {
 				if (!client.getUsername().equals(this.username) && server.online.contains(client.getUsername())) {
 					synchronized(lock){
 						client.getOut().writeUTF("Text");
-						client.getOut().writeUTF(dtf.format(now));
+						client.getOut().writeUTF(time);
 						client.getOut().writeUTF(username);
 						client.getOut().writeUTF(message);
 					}
@@ -279,15 +274,13 @@ class client_handler implements Runnable{
 		}
 	}
 	
-	public void sendTextMessageToOne(String receiver, String message) throws IOException {
-		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");  
-		LocalDateTime now = LocalDateTime.now();  
+	public void sendTextMessageToOne(String receiver, String message, String time) throws IOException {
 		for (client_handler client:server.clients) {
 			try {
 				if (client.getUsername().equals(receiver)) {
 					synchronized(lock){
 						client.getOut().writeUTF("Text");
-						client.getOut().writeUTF(dtf.format(now));
+						client.getOut().writeUTF(time);
 						client.getOut().writeUTF(username);
 						client.getOut().writeUTF(message);
 						break;
@@ -300,15 +293,14 @@ class client_handler implements Runnable{
 		}
 	}
 	
-	public void broadcastEmojiMessage(String emoji) throws IOException {
-		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");  
-		LocalDateTime now = LocalDateTime.now();  
+	public void broadcastEmojiMessage(String emoji, String time) throws IOException {
+  
 		for (client_handler client:server.clients) {
 			try {
 				if (!client.getUsername().equals(this.username) && server.online.contains(client.getUsername())) {
 					synchronized(lock){
 						client.getOut().writeUTF("Emoji");
-						client.getOut().writeUTF(dtf.format(now));
+						client.getOut().writeUTF(time);
 						client.getOut().writeUTF(username);
 						client.getOut().writeUTF(emoji);
 					}
@@ -319,15 +311,13 @@ class client_handler implements Runnable{
 		}
 	}
 	
-	public void sendEmojiMessageToOne(String receiver, String emoji) throws IOException {
-		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");  
-		LocalDateTime now = LocalDateTime.now();  
+	public void sendEmojiMessageToOne(String receiver, String emoji, String time) throws IOException { 
 		for (client_handler client:server.clients) {
 			try {
 				if (client.getUsername().equals(receiver)) {
 					synchronized(lock){
 						client.getOut().writeUTF("Emoji");
-						client.getOut().writeUTF(dtf.format(now));
+						client.getOut().writeUTF(time);
 						client.getOut().writeUTF(username);
 						client.getOut().writeUTF(emoji);
 						break;
@@ -340,20 +330,19 @@ class client_handler implements Runnable{
 		}
 	}
 	
-	public void broadcastFile(String filename, int size, byte[] buffer) throws IOException {
-		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");  
-		LocalDateTime now = LocalDateTime.now();  
+	public void broadcastFile(String filename, int size, byte[] buffer, String time) throws IOException { 
 		for (client_handler client:server.clients) {
 			try {
 				if (!client.getUsername().equals(this.username) && server.online.contains(client.getUsername())) {
 					synchronized(lock){
 						client.getOut().writeUTF("File");
-						client.getOut().writeUTF(dtf.format(now));
+						client.getOut().writeUTF(time);
 						client.getOut().writeUTF(filename);
 						client.getOut().writeUTF(String.valueOf(size));
 						while (size>0) {
 							in.read(buffer, 0, Math.min(size, 2048));
 							client.getOut().write(buffer, 0, Math.min(size, 2048));
+							size-=2048;
 						}
 						
 						client.getOut().flush();
@@ -365,20 +354,19 @@ class client_handler implements Runnable{
 		}
 	}
 	
-	public void sendFileToOne(String filename, int size, byte[] buffer, String receiver) throws IOException {
-		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");  
-		LocalDateTime now = LocalDateTime.now();  
+	public void sendFileToOne(String filename, int size, byte[] buffer, String receiver, String time) throws IOException { 
 		for (client_handler client:server.clients) {
 			try {
 				if (client.getUsername().equals(receiver)) {
 					synchronized(lock){
 						client.getOut().writeUTF("File");
-						client.getOut().writeUTF(dtf.format(now));
+						client.getOut().writeUTF(time);
 						client.getOut().writeUTF(filename);
 						client.getOut().writeUTF(String.valueOf(size));
 						while (size>0) {
 							in.read(buffer, 0, Math.min(size, 2048));
 							client.getOut().write(buffer, 0, Math.min(size, 2048));
+							size-=2048;
 						}
 						
 						client.getOut().flush();
@@ -393,6 +381,7 @@ class client_handler implements Runnable{
 	}
 	
 	public void close() throws IOException {
+		
 		server.removeOnline(username);
 		
 		if (in!=null) {
@@ -414,47 +403,53 @@ class client_handler implements Runnable{
 				String request=in.readUTF();
 				
 				if (request.equals("Log out")) {
+					out.writeUTF("You can leave");
+					out.flush();
 					close();
+					server.getOnlineList();
 				}
 				
 				else if(request.equals("Text")) {
-					String receiver=in.readUTF();
+					String time=in.readUTF();
+					String reciever=in.readUTF();
 					String text=in.readUTF();
 					
-					if (receiver.equals("Global")) {
-						broadcastTextMessage(text);
+					if (reciever.equals("Global")) {
+						broadcastTextMessage(text, time);
 					}
 					
 					else {
-						sendTextMessageToOne(receiver, text);
+						sendTextMessageToOne(reciever, text, time);
 					}
 				}
 				
 				else if(request.equals("Emoji")){
-					String receiver=in.readUTF();
+					String time=in.readUTF();
+					String reciever=in.readUTF();
 					String emoji=in.readUTF();
 					
-					if (receiver.equals("Global")) {
-						broadcastEmojiMessage(emoji);
+					if (reciever.equals("Global")) {
+						broadcastEmojiMessage(emoji, time);
 					}
 					
 					else {
-						sendEmojiMessageToOne(receiver, emoji);
+						sendEmojiMessageToOne(reciever, emoji, time);
 					}
 				}
 				
 				else if(request.equals("File")){
+					String time=in.readUTF();
 					String receiver=in.readUTF();
 					String filename=in.readUTF();
 					int size=Integer.parseInt(in.readUTF());
 					byte[] buffer=new byte[2048];
 					
 					if (receiver.equals("Global")) {
-						broadcastFile(filename, size, buffer);
+						broadcastFile(filename, size, buffer, time);
 					}
 					
 					else {
-						sendFileToOne(filename, size, buffer, receiver);
+						sendFileToOne(filename, size, buffer, receiver, time);
 					}
 				}
 			} catch (IOException e) {
