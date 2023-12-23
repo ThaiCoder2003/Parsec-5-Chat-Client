@@ -11,12 +11,9 @@ CREATE TABLE users
 
 CREATE TABLE chat_history
 (
-	id int,
     sender varchar(255),
     receiver varchar(255),
-    date datetime,
+    date varchar(255),
     content_type varchar(255),
-    content varchar(255),
-    
-    constraint pk_id primary key (id)
+    content varchar(255)
 )

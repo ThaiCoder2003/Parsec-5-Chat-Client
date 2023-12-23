@@ -238,7 +238,7 @@ public class login{
 					String welcome="Welcome back, "+getUsername+"!";
 					EventQueue.invokeLater(new Runnable() {
 						public void run() {
-							int alert=JOptionPane.showConfirmDialog(new JFrame(), welcome, "Welcome back!", JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE);
+							JOptionPane.showConfirmDialog(new JFrame(), welcome, "Welcome back!", JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE);
 							ChatRoom room=new ChatRoom(getUsername, read, write);
 						}
 					});
@@ -247,7 +247,7 @@ public class login{
 				}
 				
 				else {
-					int alert=JOptionPane.showConfirmDialog(new JFrame(), response, "Login failed!", JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE);
+					JOptionPane.showConfirmDialog(new JFrame(), response, "Login failed!", JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE);
 					
 					password.setText("");
 				}
@@ -263,11 +263,11 @@ public class login{
 						
 						if (response.equals("Registered Successfully!")) {
 							String getUsername=username.getText();
-							String welcome="Welcome to Parsec 5 Chat, "+getUsername+"!/nHope you have the best time here! :)";
+							String welcome="Welcome to Parsec 5 Chat, "+getUsername+"!\nHope you have the best time here! :)";
 							
 							EventQueue.invokeLater(new Runnable() {
 								public void run() {
-									int alert=JOptionPane.showConfirmDialog(new JFrame(), welcome, "Welcome new user!", JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE);
+									JOptionPane.showConfirmDialog(new JFrame(), welcome, "Welcome new user!", JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE);
 									ChatRoom room=new ChatRoom(getUsername, read, write);
 								}
 							});
@@ -276,14 +276,14 @@ public class login{
 						}
 						
 						else {
-							int alert=JOptionPane.showConfirmDialog(new JFrame(), response, "Registration failed!", JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE);
+							JOptionPane.showConfirmDialog(new JFrame(), response, "Registration failed!", JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE);
 							
 							password.setText("");
 						}
 					}
 					
 					else {
-						int alert=JOptionPane.showConfirmDialog(new JFrame(), "Invalid confirm password!", "Registration failed!", JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE);
+						JOptionPane.showConfirmDialog(new JFrame(), "Invalid confirm password!", "Registration failed!", JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE);
 					}
 				}
 			}

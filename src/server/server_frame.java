@@ -11,7 +11,6 @@ public class server_frame{
 	private JPanel button;
 	server server;
 	private JButton start;
-	private JButton end;
 	private JPanel footer;
 	private JLabel alert; 
 	
@@ -51,13 +50,7 @@ public class server_frame{
 		start.setText("Start Server");
 		start.setEnabled(true);
 		
-		end=new JButton();
-		end.setPreferredSize(new Dimension(120, 60));
-		end.setText("Stop Server");
-		end.setEnabled(false);
-		
 		con.add(start);
-		con.add(end);
 		
 		button.add(con, BorderLayout.CENTER);
 		
@@ -85,30 +78,12 @@ public class server_frame{
 				
 				t.start();
 				start.setEnabled(false);
-				end.setEnabled(true);
 				alert.setForeground(Color.GREEN);
 				alert.setText("Server started successfully!");
 			}
 			
 		});
 		
-		end.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				try {
-					server.closeServer();
-				}catch(IOException el){
-					alert.setForeground(Color.red);
-					alert.setText("Failed to close server!");
-				}
-				
-				t.interrupt();
-				start.setEnabled(true);
-				end.setEnabled(false);
-				alert.setForeground(Color.GREEN);
-				alert.setText("Server closed successfully!");
-			}
-			
-		});
 		
 		frame.pack();
 		frame.setLocationRelativeTo(null);

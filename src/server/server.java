@@ -16,10 +16,11 @@ public class server{
 	private static DataInputStream in;
 	private static DataOutputStream out;
 	static ArrayList<client_handler> clients=new ArrayList<>();
-	static ArrayList<String> online=new ArrayList<>();
+
 	
 	public void loadAccount() {
 		try {
+			//connect to mysql server, and get all users into array
 			Connection conn=getConnection(DB_URL, USER_NAME, PASSWORD);
 			Statement stmt=conn.createStatement();
 			ResultSet rs=stmt.executeQuery("select * from users");
@@ -39,6 +40,7 @@ public class server{
 	
 	public int saveAccount(String username, String password) {
 		try {
+			//register a new account straight into a mysql database
 			String sql="insert into users(username, password)"
 					+ " values(?, ?)";
 			Connection conn=getConnection(DB_URL, USER_NAME, PASSWORD);
@@ -57,38 +59,56 @@ public class server{
 		}
 	}
 	
-	public void addOnline(String username) {	
-		online.add(username);
+	public static int saveMessage(String messageType, String reciever, String sender, String time, String message) {
+		try {
+			//register a new account straight into a mysql database
+			String sql="insert into chat_history(sender, receiver, date, content_type, content)"
+					+ " values(?, ?, ?, ?, ?)";
+			Connection conn=getConnection(DB_URL, USER_NAME, PASSWORD);
+			PreparedStatement preparedStmt=conn.prepareStatement(sql);
+			preparedStmt.setString(1, sender);
+			preparedStmt.setString(2, reciever);
+			preparedStmt.setString(3, time);
+			preparedStmt.setString(4, messageType);
+			preparedStmt.setString(5, message);
+			
+			int row=preparedStmt.executeUpdate();
+			conn.close();
+			
+			return row;
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+			return 0;
+		}
 	}
 	
-	public static void removeOnline(String username) {
-		online.remove(username);
-	}
+	// whenever someone logs in or register, add them into online array
 	
-	public static void getOnlineList() throws IOException {
-		String list="";
-		for (String user:online) {
-			list+=user;
+	
+	public static void getUserList() throws IOException {
+		String list=" ,Global";
+		for (client_handler user:clients) {
 			list+=",";
+			list+=user.getUsername();
 		}
 		
-		list=list.substring(0, list.length()-1);
-		
 		for (client_handler client:clients) {
-			if (online.contains(client.getUsername())) {
-				client.getOut().writeUTF("Online Users: ");
+			if (client.getOut()!=null) {
+				client.getOut().writeUTF("User List");
 				client.getOut().writeUTF(list);
 				client.getOut().flush();
 			}
 		}
 	}
 	
+	
 	public server() throws IOException{
 		try {
 			lock=new Object();
 			loadAccount();
 			s=new ServerSocket(2023);
-			while(!s.isClosed()) {
+			while(true) {
 				socket=s.accept();
 				
 				in=new DataInputStream(socket.getInputStream());
@@ -106,12 +126,12 @@ public class server{
 						if (added!=0) {
 							client_handler new_client=new client_handler(username, password, socket, lock);
 							clients.add(new_client);
+							
 							out.writeUTF("Registered Successfully!");
 							out.flush();
 							Thread t=new Thread(new_client);
 							t.start();
-							addOnline(username);
-							getOnlineList();
+							getUserList();
 						}
 						else {
 							out.writeUTF("Registration Failed!");
@@ -140,8 +160,7 @@ public class server{
 									out.flush();
 									Thread t=new Thread(new_client);
 									t.start();
-									addOnline(username);
-									getOnlineList();
+									getUserList();
 								} 
 								else {
 									out.writeUTF("Incorrect username or password!");
@@ -164,25 +183,7 @@ public class server{
 			System.err.println(ex);
 		}
 	 }
-	
-	public static void closeServer() throws IOException{
-		for (client_handler client:clients) {
-			client.close();
-		}
-	
-		clients.clear();
-		if (in!=null) {
-			in.close();
-		}
-		
-		if (out!=null) {
-			out.close();
-		}
-		
-		if (!s.isClosed()) {
-			s.close();
-		}
-	}
+
 	
 	 public boolean exists(String username) {
 		 for (client_handler client:clients) {
@@ -258,132 +259,150 @@ class client_handler implements Runnable{
 	}
 	
 	public void broadcastTextMessage(String message, String time) throws IOException {
-		for (client_handler client:server.clients) {
-			try {
-				if (!client.getUsername().equals(this.username) && server.online.contains(client.getUsername())) {
-					synchronized(lock){
-						client.getOut().writeUTF("Text");
-						client.getOut().writeUTF(time);
-						client.getOut().writeUTF(username);
-						client.getOut().writeUTF(message);
+		int row=server.saveMessage("Text", "Global", username, time, message);
+		if (row!=0) {
+			for (client_handler client:server.clients) {
+				try {
+					if (!client.getUsername().equals(this.username) && client.getOut()!=null) {
+						synchronized(lock){
+							client.getOut().writeUTF("Text");
+							client.getOut().writeUTF("Global");
+							client.getOut().writeUTF(time);
+							client.getOut().writeUTF(username);
+							client.getOut().writeUTF(message);
+							client.getOut().flush();
+						}
 					}
-				}
-			}catch(Exception e) {
-				close();
-			}			
+				}catch(Exception e) {
+					close();
+				}			
+			}
 		}
 	}
 	
 	public void sendTextMessageToOne(String receiver, String message, String time) throws IOException {
-		for (client_handler client:server.clients) {
-			try {
-				if (client.getUsername().equals(receiver)) {
-					synchronized(lock){
-						client.getOut().writeUTF("Text");
-						client.getOut().writeUTF(time);
-						client.getOut().writeUTF(username);
-						client.getOut().writeUTF(message);
-						break;
+		int row=server.saveMessage("Text", receiver, username, time, message);
+		if (row!=0) {
+			for (client_handler client:server.clients) {
+				try {
+					if (client.getUsername().equals(receiver) && client.getOut()!=null) {
+						synchronized(lock){
+							client.getOut().writeUTF("Text");
+							client.getOut().writeUTF("Private");
+							client.getOut().writeUTF(time);
+							client.getOut().writeUTF(username);
+							client.getOut().writeUTF(message);
+							client.getOut().flush();
+							break;
+						}
 					}
+				}catch(Exception e) {
+					close();
 				}
-			}catch(Exception e) {
-				close();
 			}
-			
 		}
 	}
 	
 	public void broadcastEmojiMessage(String emoji, String time) throws IOException {
-  
-		for (client_handler client:server.clients) {
-			try {
-				if (!client.getUsername().equals(this.username) && server.online.contains(client.getUsername())) {
-					synchronized(lock){
-						client.getOut().writeUTF("Emoji");
-						client.getOut().writeUTF(time);
-						client.getOut().writeUTF(username);
-						client.getOut().writeUTF(emoji);
+		int row=server.saveMessage("Emoji", "Global", username, time, emoji);
+		if (row!=0) {
+			for (client_handler client:server.clients) {
+				try {
+					if (!client.getUsername().equals(this.username)) {
+						synchronized(lock) {
+							client.getOut().writeUTF("Emoji");
+							client.getOut().writeUTF("Global");
+							client.getOut().writeUTF(time);
+							client.getOut().writeUTF(username);
+							client.getOut().writeUTF(emoji);
+							client.getOut().flush();
+						}
 					}
-				}
-			}catch(Exception e) {
-				close();
-			}			
+				}catch(Exception e) {
+					close();
+				}			
+			}
 		}
 	}
 	
 	public void sendEmojiMessageToOne(String receiver, String emoji, String time) throws IOException { 
-		for (client_handler client:server.clients) {
-			try {
-				if (client.getUsername().equals(receiver)) {
-					synchronized(lock){
-						client.getOut().writeUTF("Emoji");
-						client.getOut().writeUTF(time);
-						client.getOut().writeUTF(username);
-						client.getOut().writeUTF(emoji);
-						break;
+		int row=server.saveMessage("Emoji", receiver, username, time, emoji);
+		if (row!=0) {
+			for (client_handler client:server.clients) {
+				try {
+					if (client.getUsername().equals(receiver)) {
+							client.getOut().writeUTF("Emoji");
+							client.getOut().writeUTF("Private");
+							client.getOut().writeUTF(time);
+							client.getOut().writeUTF(username);
+							client.getOut().writeUTF(emoji);
+							client.getOut().flush();
+							break;
 					}
+				}catch(Exception e) {
+					close();
 				}
-			}catch(Exception e) {
-				close();
 			}
-			
 		}
 	}
 	
 	public void broadcastFile(String filename, int size, byte[] buffer, String time) throws IOException { 
-		for (client_handler client:server.clients) {
-			try {
-				if (!client.getUsername().equals(this.username) && server.online.contains(client.getUsername())) {
-					synchronized(lock){
-						client.getOut().writeUTF("File");
-						client.getOut().writeUTF(time);
-						client.getOut().writeUTF(filename);
-						client.getOut().writeUTF(String.valueOf(size));
-						while (size>0) {
-							in.read(buffer, 0, Math.min(size, 2048));
-							client.getOut().write(buffer, 0, Math.min(size, 2048));
-							size-=2048;
+		int row=server.saveMessage("File", "Global", username, time, filename);
+		if (row!=0) {
+			for (client_handler client:server.clients) {
+				try {
+					if (!client.getUsername().equals(this.username) && client.getOut()!=null) {
+						synchronized(lock){
+							client.getOut().writeUTF("File");
+							client.getOut().writeUTF(time);
+							client.getOut().writeUTF(filename);
+							client.getOut().writeUTF(String.valueOf(size));
+							while (size>0) {
+								in.read(buffer, 0, Math.min(size, 2048));
+								client.getOut().write(buffer, 0, Math.min(size, 2048));
+								size-=2048;
+							}
+							
+							client.getOut().flush();
 						}
-						
-						client.getOut().flush();
 					}
-				}
-			}catch(Exception e) {
-				close();
-			}			
+				}catch(Exception e) {
+					close();
+				}			
+			}
 		}
 	}
 	
-	public void sendFileToOne(String filename, int size, byte[] buffer, String receiver, String time) throws IOException { 
-		for (client_handler client:server.clients) {
-			try {
-				if (client.getUsername().equals(receiver)) {
-					synchronized(lock){
-						client.getOut().writeUTF("File");
-						client.getOut().writeUTF(time);
-						client.getOut().writeUTF(filename);
-						client.getOut().writeUTF(String.valueOf(size));
-						while (size>0) {
-							in.read(buffer, 0, Math.min(size, 2048));
-							client.getOut().write(buffer, 0, Math.min(size, 2048));
-							size-=2048;
+	public void sendFileToOne(String filename, int size, byte[] buffer, String receiver, String time) throws IOException {
+		int row=server.saveMessage("File", receiver, username, time, filename);
+		if (row!=0) {
+			for (client_handler client:server.clients) {
+				try {
+					if (client.getUsername().equals(receiver) && client.getOut()!=null) {
+						synchronized(lock){
+							client.getOut().writeUTF("File");
+							client.getOut().writeUTF(time);
+							client.getOut().writeUTF(filename);
+							client.getOut().writeUTF(String.valueOf(size));
+							while (size>0) {
+								in.read(buffer, 0, Math.min(size, 2048));
+								client.getOut().write(buffer, 0, Math.min(size, 2048));
+								size-=2048;
+							}
+							
+							client.getOut().flush();
+							break;
 						}
-						
-						client.getOut().flush();
-						break;
 					}
+				}catch(Exception e) {
+					close();
 				}
-			}catch(Exception e) {
-				close();
 			}
-			
 		}
 	}
 	
 	public void close() throws IOException {
-		
-		server.removeOnline(username);
-		
+
 		if (in!=null) {
 			in.close();
 		}
@@ -398,15 +417,15 @@ class client_handler implements Runnable{
 	}
 	
 	public void run() {
-		while (socket!=null) {
+		while (true) {
+			String request=" ";
 			try {
-				String request=in.readUTF();
+				request=in.readUTF();
 				
 				if (request.equals("Log out")) {
 					out.writeUTF("You can leave");
 					out.flush();
 					close();
-					server.getOnlineList();
 				}
 				
 				else if(request.equals("Text")) {
